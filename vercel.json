@@ -1,5 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
@@ -42,19 +41,8 @@
     }
   ],
   "regions": ["iad1"],
-  "public": true,
-  "github": {
+  "git": {
     "silent": false,
-    "autoAlias": true,
-    "enabled": true,
-    "autoJobCancelation": true,
-    "deployPullRequests": {
-      "enabled": true,
-      "configuration": true,
-      "labels": false
-    },
-    "protectProductionBranchesFromCI": {
-      "main": true
-    }
+    "autoJobCancelation": true
   }
 }

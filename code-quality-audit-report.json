@@ -1,0 +1,447 @@
+{
+  "auditMeta": {
+    "project": "RingRight Solution Website",
+    "path": "e:\\Ringrightsolution-website-trail-notlive\\app",
+    "auditDate": "2026-08-29",
+    "framework": "React 19 + Vite + TypeScript + TailwindCSS",
+    "totalIssues": 42,
+    "severityBreakdown": {
+      "critical": 4,
+      "high": 13,
+      "medium": 15,
+      "low": 10
+    },
+    "categoryBreakdown": {
+      "typescriptTypeSafety": 6,
+      "reactPatterns": 8,
+      "componentArchitecture": 5,
+      "errorBoundaries": 2,
+      "loadingErrorStates": 4,
+      "accessibility": 7,
+      "performance": 8,
+      "browserCompatibility": 2
+    }
+  },
+  "issues": [
+    {
+      "id": "TS-001",
+      "category": "typescriptTypeSafety",
+      "severity": "high",
+      "file": "src/data/site.ts",
+      "line": 419,
+      "issue": "navLinks array lacks explicit exported type",
+      "description": "The navLinks constant (4 items: label, to) has no exported TypeScript type. Header.tsx and Footer.tsx consume it implicitly via inference, preventing compile-time enforcement of shape.",
+      "recommendedFix": "Add: export type NavLink = { label: string; to: string }; and type the export: export const navLinks: NavLink[] = [...]"
+    },
+    {
+      "id": "TS-002",
+      "category": "typescriptTypeSafety",
+      "severity": "high",
+      "file": "src/data/site.ts",
+      "line": 426,
+      "issue": "homeSections array lacks explicit exported type",
+      "description": "homeSections (items: label, hash) is used in Header.tsx without a named type, so structural errors (wrong property names) would not be caught at the consumer boundary.",
+      "recommendedFix": "Add: export type HomeSection = { label: string; hash: string }; export const homeSections: HomeSection[] = [...]"
+    },
+    {
+      "id": "TS-003",
+      "category": "typescriptTypeSafety",
+      "severity": "medium",
+      "file": "src/pages/Home.tsx",
+      "line": 29,
+      "issue": "Schema.org JSON-LD object is untyped",
+      "description": "The `schema` const (lines 29-64) is a large inline object with '@context', '@graph', Organization and ProfessionalService sub-objects. No interface/type guards; typos in schema.org fields are invisible to TS.",
+      "recommendedFix": "Define SchemaOrganization, SchemaProfessionalService, and SchemaGraph types; export type SiteSchema = { '@context': string; '@graph': (SchemaOrganization | SchemaProfessionalService)[] };"
+    },
+    {
+      "id": "TS-004",
+      "category": "typescriptTypeSafety",
+      "severity": "medium",
+      "file": "src/App.tsx",
+      "line": 11,
+      "issue": "Module-level mutable variable lenisInstance used as singleton pattern without type-narrowing guards",
+      "description": "let lenisInstance: Lenis | null = null is mutated across useLenis() and ScrollManager(). Consumers (App.tsx:44, App.tsx:51) access it via optional chaining but there is no centralized ownership contract and it lives outside React state.",
+      "recommendedFix": "Replace module singleton with a LenisContext provider + useLenisContext() hook, or return imperative handle from useLenis hook itself to avoid module-scope mutable state."
+    },
+    {
+      "id": "TS-005",
+      "category": "typescriptTypeSafety",
+      "severity": "medium",
+      "file": "src/pages/Home.tsx",
+      "line": 115,
+      "issue": "marqueeItems, leadFlow, values, model, principles inline arrays untyped",
+      "description": "Inline arrays (marqueeItems line 115, leadFlow line 142, and analogous arrays in About.tsx, GrowthStrategy.tsx, Contact.tsx) have no named type. Although they are local, the leadFlow `type: 'in' | 'out'` as const union is fragile; if expanded the consuming conditional logic has no exhaustiveness check.",
+      "recommendedFix": "Add local type aliases, e.g. type LeadFlowItem = { type: 'in' | 'out'; label: string; meta: string }; and add exhaustive switch + `assertUnreachable` utility if patterns grow."
+    },
+    {
+      "id": "TS-006",
+      "category": "typescriptTypeSafety",
+      "severity": "low",
+      "file": "src/components/site/shared.tsx",
+      "line": 56,
+      "issue": "children typed as React.ReactNode without explicit React import type",
+      "description": "PageHero children prop uses React.ReactNode but only default React is needed. Minor: verbatimModuleSyntax on; type imports should be `import type { ReactNode } from 'react'` for clarity and consistency with other component files.",
+      "recommendedFix": "Add `import type { ReactNode } from 'react'` and change to `children?: ReactNode`."
+    },
+    {
+      "id": "RP-001",
+      "category": "reactPatterns",
+      "severity": "critical",
+      "file": "src/App.tsx",
+      "line": 11,
+      "issue": "Module-level mutable singleton lenisInstance is a React anti-pattern",
+      "description": "Mutable state outside React (lenisInstance) can cause stale closures, SSR issues, memory leaks in HMR, and makes testing impossible. StrictMode double-invokes effects in dev, so lenisInstance = null / new Lenis() assignment ordering bugs are possible.",
+      "recommendedFix": "Use React context: create LenisProvider that constructs Lenis once via useRef + useEffect, exposes scrollTo() via a stable callback, and consumes via useLenis() hook that throws if provider is missing."
+    },
+    {
+      "id": "RP-002",
+      "category": "reactPatterns",
+      "severity": "high",
+      "file": "src/pages/Home.tsx",
+      "line": 154,
+      "issue": "useEffect empty dependency array omits leadFlow.length (implicit dep)",
+      "description": "useEffect(() => { ... setInterval(..., leadFlow.length) ... }, []) closes over leadFlow.length. leadFlow is a module-level const so length is stable at runtime, but the rule of hooks and eslint-plugin-react-hooks exhaustive-deps rule is being violated. If leadFlow becomes state/props-driven later this becomes a real stale-closure bug.",
+      "recommendedFix": "Either (a) move leadFlow definition inside the component or outside module with separate constant, or (b) extract interval logic into custom hook and move leadFlow.length to deps: [leadFlow.length]."
+    },
+    {
+      "id": "RP-003",
+      "category": "reactPatterns",
+      "severity": "high",
+      "file": "src/pages/Home.tsx",
+      "line": 533,
+      "issue": "Duplicate document.title side-effect when react-helmet-async already manages it",
+      "description": "useEffect(() => { document.title = '...' }, []) sets the title, AND <Helmet><title>...</title></Helmet> is already rendered on line 540. Two sources of truth for the same DOM side-effect. Also Helmet title is canonical SEO; direct doc.title can race and override Helmet in certain hydration timings.",
+      "recommendedFix": "Remove the document.title useEffect entirely (lines 533-535). Helmet is the single owner of <title>; trust react-helmet-async to perform the side-effect."
+    },
+    {
+      "id": "RP-004",
+      "category": "reactPatterns",
+      "severity": "medium",
+      "file": "src/App.tsx",
+      "line": 63,
+      "issue": "Direct DOM mutation document.body.style.overflow in useEffect bypasses React",
+      "description": "Setting document.body.style.overflow directly is technically fine but couples App to a global browser DOM. Also no type-check that document exists; combined with missing SSR guards this would throw on server render if SSR is ever added.",
+      "recommendedFix": "Keep the approach but (a) guard with typeof document !== 'undefined' for SSR safety, or (b) consider setting 'overflow-hidden' class on body element via clsx utility. Also ensure cleanup restores prior value, not empty string."
+    },
+    {
+      "id": "RP-005",
+      "category": "reactPatterns",
+      "severity": "medium",
+      "file": "src/hooks/use-mobile.ts",
+      "line": 9,
+      "issue": "useIsMobile uses matchMedia listener but window.innerWidth fallback for SSR is missing",
+      "description": "use-mobile.ts uses window.matchMedia and window.innerWidth without typeof window guard. SSR build (if ever added to Vite) or test JSDOM config without layout would error. Also innerWidth vs matchMedia result divergence: line 11/14 use innerWidth when onChange fires only for mql change event — initial check uses same. Minor: line 11 uses window.innerWidth which is redundant with mql.matches.",
+      "recommendedFix": "Add `if (typeof window === 'undefined') return false;` at hook entry. Use `setIsMobile(mql.matches)` consistently instead of re-checking innerWidth to avoid media-query / inner-width mismatches on zoomed viewports."
+    },
+    {
+      "id": "RP-006",
+      "category": "reactPatterns",
+      "severity": "medium",
+      "file": "src/components/site/effects.tsx",
+      "line": 17,
+      "issue": "CursorGlow pointermove listener has no reduced-motion guard",
+      "description": "window.addEventListener('pointermove', ...) adds a continuous animation. Per WCAG Criterion 2.3.3 and system `prefers-reduced-motion`, users with motion sensitivities should not have cursor tracking; also a performance concern on low-end devices (every pixel move triggers state update).",
+      "recommendedFix": "Query window.matchMedia('(prefers-reduced-motion: reduce)') and skip the listener entirely if matches. Also throttle the handler via requestAnimationFrame batching (current x.set/y.set per pixel is ~60+ writes/sec)."
+    },
+    {
+      "id": "RP-007",
+      "category": "reactPatterns",
+      "severity": "low",
+      "file": "src/components/site/Preloader.tsx",
+      "line": 13,
+      "issue": "Preloader onComplete callback recreated on every render missing from dep array",
+      "description": "useEffect(() => { ...; onComplete(); }, [onComplete]) — dep array correctly has onComplete. However in App.tsx:74 onComplete is inline `() => setLoading(false)`. Since setLoading is stable (React setter), this is OK today. But: animate.onComplete also calls window.setTimeout(onComplete, 1120). Combined with the returned controls.stop() in cleanup, if parent unmounts the callback is cancelled. OK but fragile.",
+      "recommendedFix": "No code change required. Document: Preloader should receive useCallback-wrapped onComplete if consumer logic ever becomes non-trivial; or move the 1120ms delay into parent (App.tsx) and keep Preloader synchronous."
+    },
+    {
+      "id": "RP-008",
+      "category": "reactPatterns",
+      "severity": "low",
+      "file": "src/App.tsx",
+      "line": 36,
+      "issue": "ScrollManager component renders null (side-effect only component pattern)",
+      "description": "ScrollManager() renders null and performs only imperative scrollTo in effects. This works but is an uncommon pattern; React documentation recommends custom hooks for side-effect-only logic. Components rendering null are invisible to DevTools component tree inspection for their purpose.",
+      "recommendedFix": "Convert to `useScrollManager(hash, pathname)` hook called in App body. Keep all logic identical; only the syntax/intent changes for dev readability."
+    },
+    {
+      "id": "CA-001",
+      "category": "componentArchitecture",
+      "severity": "critical",
+      "file": "src/pages/Home.tsx",
+      "line": 1,
+      "issue": "Home.tsx is a monolithic 680-line file with 10+ nested component definitions",
+      "description": "Home.tsx (lines 1-680) defines: RevealWords, StatCell, Marquee, HeroSection, EditorialIntro, ServiceIndex, ServiceDetail, WorkflowDiagram, and default Home export. Coupled in one file: imports, schema object, motion config, data loop logic, image imports. Hard to test, review, tree-shake individually.",
+      "recommendedFix": "Extract each named function component to its own file under src/components/sections/home/ (e.g. HeroSection.tsx, ServiceDetail.tsx, WorkflowDiagram.tsx) with an index.ts barrel. Move `schema` to src/data/seo-schemas.ts. Move `marqueeItems`/`leadFlow` to src/data/site.ts."
+    },
+    {
+      "id": "CA-002",
+      "category": "componentArchitecture",
+      "severity": "medium",
+      "file": "src/pages/About.tsx",
+      "line": 12,
+      "issue": "values and model data arrays co-located inside About page component file",
+      "description": "About.tsx lines 12-51 define static data arrays alongside JSX. Pattern is repeated in GrowthStrategy.tsx (lines 13-29) and Contact.tsx (lines 13-29). Creates inconsistent data-fetching architecture; some data in data/site.ts, some inline in page.",
+      "recommendedFix": "Move inline static data to src/data/site.ts with typed exports: export const aboutValues: AboutValue[] = [...] and import from page components for single-source-of-truth data layer."
+    },
+    {
+      "id": "CA-003",
+      "category": "componentArchitecture",
+      "severity": "medium",
+      "file": "src/components/ui/* (60+ files)",
+      "line": 1,
+      "issue": "~60 unused shadcn/ui components imported into project bundle",
+      "description": "package.json imports @radix-ui/react-accordion, alert-dialog, calendar, collapsible, command, context-menu, drawer, hover-card, input-otp, kbd, menubar, pagination, radio-group, resizable-panels, sheet, sidebar, slider, tabs, toggle, carousel, chart, date-fns, cmdk, input-otp — none of these Radix primitives nor their wrapping components under components/ui/* are referenced anywhere in src/pages/* or src/components/site/* (only button.tsx, card.tsx patterns seen). Significant dead-code / unused-package surface.",
+      "recommendedFix": "Audit each `import from '@radix-ui/react-*'` and the src/components/ui/* wrapper. Delete components not referenced. Confirm with production build bundle analyzer."
+    },
+    {
+      "id": "CA-004",
+      "category": "componentArchitecture",
+      "severity": "low",
+      "file": "src/components/site/shared.tsx",
+      "line": 7,
+      "issue": "Three components (SectionIntro, PageHero, FinalCta) share one file with different concerns",
+      "description": "shared.tsx groups shared components which is fine, but FinalCta is a CTA section, PageHero is a large hero-with-image-and-buttons, SectionIntro is a 3-line eyebrow+title+copy. File mixes section-level with page-level components. As the site grows this folder becomes a dumping ground.",
+      "recommendedFix": "Separate to src/components/site/section/SectionIntro.tsx, src/components/site/cta/FinalCta.tsx, src/components/site/hero/PageHero.tsx — OR keep file but rename to sections.tsx and only export section primitives."
+    },
+    {
+      "id": "CA-005",
+      "category": "componentArchitecture",
+      "severity": "low",
+      "file": "src/pages/Contact.tsx",
+      "line": 31,
+      "issue": "inputClass string constant defined inside page module rather than shared",
+      "description": "inputClass (line 31-32) is a large className string for inputs used only in Contact form. If the site ever grows a second form (newsletter, service request) this styling will be duplicated. Contact form itself is 200+ lines inline in Contact page.",
+      "recommendedFix": "Extract ContactForm to src/components/forms/ContactForm.tsx. Extract shared inputClass to either a tailwind @layer components .form-input class OR create src/components/ui/input classes via existing Input component (there is already an unused components/ui/input.tsx)."
+    },
+    {
+      "id": "EB-001",
+      "category": "errorBoundaries",
+      "severity": "critical",
+      "file": "src/main.tsx",
+      "line": 8,
+      "issue": "No top-level React ErrorBoundary wrapping the application tree",
+      "description": "main.tsx renders <StrictMode><HelmetProvider><BrowserRouter><App/></BrowserRouter></HelmetProvider></StrictMode> with zero ErrorBoundary. Any throw during render (e.g. motion hook throws on null ref, data.site schema change, image import missing) will unmount the ENTIRE app into a white-screen crash — no fallback UI, no retry button, no error log UI.",
+      "recommendedFix": "Create src/components/error-boundary.tsx implementing class component ErrorBoundary (hooks CANNOT catch render-phase throws yet). Show friendly 'Something went wrong' with retry button and optional error details in dev. Wrap the tree in main.tsx after HelmetProvider but before BrowserRouter (or around BrowserRouter too)."
+    },
+    {
+      "id": "EB-002",
+      "category": "errorBoundaries",
+      "severity": "high",
+      "file": "src/App.tsx & route components",
+      "line": 78,
+      "issue": "No route-level / suspense boundary with fallback for lazy routes",
+      "description": "Today no routes are lazy-loaded. If you ever React.lazy(() => import('./pages/Home')) or add more routes, a missing Suspense boundary will crash the tree because React.lazy requires Suspense. Also missing route-level granular error recovery means one page crash = all pages break.",
+      "recommendedFix": "Wrap each route element OR Routes in: <ErrorBoundary key={pathname}><Suspense fallback={<PageSkeleton/>}>...</Suspense></ErrorBoundary>. Use router v7's createBrowserRouter w/ loader errorElement if migrating."
+    },
+    {
+      "id": "LS-001",
+      "category": "loadingErrorStates",
+      "severity": "high",
+      "file": "src/pages/Contact.tsx",
+      "line": 37,
+      "issue": "handleSubmit has no loading state, no error state — just optimistic 'submitted: true'",
+      "description": "When wired to a real API (e.g. fetch POST), users will experience: (a) no isSubmitting spinner/disabled to prevent double-click, (b) no error UI if fetch throws. Currently setSubmitted(true) happens synchronously after preventDefault. Even with mock, this UX pattern breaks when real code is added.",
+      "recommendedFix": "Add useState<'idle'|'loading'|'success'|'error'>() with error message. Disable submit button during loading. Render explicit error block under form. Use react-hook-form (already installed!) + zod resolver (also already installed!) instead of manual DOM form."
+    },
+    {
+      "id": "LS-002",
+      "category": "loadingErrorStates",
+      "severity": "medium",
+      "file": "src/components/site/Preloader.tsx",
+      "line": 9,
+      "issue": "Preloader simulates fake 2.1s progress without any real event (resource timing, load event)",
+      "description": "Preloader runs for fixed 2.1s via framer-motion animate. Not tied to window.load event, hero image decode, or font loading metrics. UX can be faster-or-slower than actual resources. Also no timeout safeguard if onComplete never fires for any reason — site would be stuck forever hidden.",
+      "recommendedFix": "Use two signals: (1) Promise.all([window loaded promise, heroImage.decode() promise, document.fonts.ready]) AND (2) min duration. Max of both, with hard safety timeout: window.setTimeout(onComplete, 4000) as max cap."
+    },
+    {
+      "id": "LS-003",
+      "category": "loadingErrorStates",
+      "severity": "medium",
+      "file": "src/pages/Home.tsx",
+      "line": 261,
+      "issue": "Hero image and editorial images have no error state if src fails to load",
+      "description": "<img src={heroImage} .../> renders without onError handling. Broken CDN / wrong path = missing image with alt text shown unstyled; hero-media card has overlay gradient that expects an image so result visually looks broken (gradient on empty white/transparent).",
+      "recommendedFix": "Create src/components/ui/image.tsx wrapper component with useState error + fallback silhouette SVG or placeholder, or use onError to swap src to a data URI placeholder. Apply to all marketing imagery."
+    },
+    {
+      "id": "LS-004",
+      "category": "loadingErrorStates",
+      "severity": "low",
+      "file": "src/hooks/use-mobile.ts",
+      "line": 5,
+      "issue": "useIsMobile initial state `undefined` before hydration causes double-render layout shift",
+      "description": "const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined); return !!isMobile returns false during SSR/hydration then after effect flips to true/false. On mobile screens -> desktop-first CSS + conditional rendering will flash wrong layout for one frame.",
+      "recommendedFix": "If no SSR: initialize useState to !!window && window.innerWidth < MOBILE_BREAKPOINT inside useState init function. If SSR: use layout-effect-only pattern or match media in CSS only and avoid layout-shifting conditional branches."
+    },
+    {
+      "id": "AX-001",
+      "category": "accessibility",
+      "severity": "critical",
+      "file": "Missing globally",
+      "line": -1,
+      "issue": "No skip-to-main-content / skip-to-nav bypass blocks at top of document",
+      "description": "WCAG 2.4.1 Bypass Blocks (Level A) requires a mechanism to bypass repeated blocks of content. Screen-reader / keyboard users land on the page and must Tab through ~5-10 nav items (Logo, 4 routes, 3 sections, CTA, hamburger) on every single page before reaching main content.",
+      "recommendedFix": "Add <a href=\"#main-content\" className=\"sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[200] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-blue-700\">Skip to main content</a> as first child of <body> / Header, and ensure each page wraps <main id=\"main-content\">."
+    },
+    {
+      "id": "AX-002",
+      "category": "accessibility",
+      "severity": "high",
+      "file": "src/components/site/shared.tsx",
+      "line": 61,
+      "issue": "Hero background decoration img has empty alt but no explicit role='presentation'",
+      "description": "<img src={image} alt=\"\" ... /> at line 61 is a background/decorative. Alt=\"\" correctly marks it decorative for AT, but aria-hidden=\"true\" (or role=\"presentation\") is more explicit and needed for some older screen readers that inconsistently read empty-alt images. Also same image is used twice (once decorative opacity-16%, once real alt line 85) — consider aria-hidden on decorative only.",
+      "recommendedFix": "Add aria-hidden=\"true\" to decorative img (line 61). Confirm the real hero image line 85 keeps alt={alt} and has no aria-hidden."
+    },
+    {
+      "id": "AX-003",
+      "category": "accessibility",
+      "severity": "high",
+      "file": "src/components/site/Header.tsx",
+      "line": 51,
+      "issue": "Home anchor links (homeSections map) rendered as <a href> with client-side navigation via hash, no programmatic focus after navigation",
+      "description": "Home sections: Services, Live Answering, Industries. App.tsx ScrollManager scrolls to target with smooth scroll on hash change, but focus remains on the clicked link. Keyboard users pressing Tab next continue from nav instead of the destination section (WCAG 2.4.3 Focus Order).",
+      "recommendedFix": "After hash scroll completes, programmatic focus(): target.setAttribute('tabindex', '-1'); target.focus({ preventScroll: true }); — wrap in try/catch for links without valid ids."
+    },
+    {
+      "id": "AX-004",
+      "category": "accessibility",
+      "severity": "medium",
+      "file": "src/components/site/effects.tsx",
+      "line": 29,
+      "issue": "Magnetic hover-effect wraps interactive <a> and <Link> in non-interactive div capturing onMouseMove",
+      "description": "Magnetic is a motion.div with onMouseMove/onMouseLeave wrapping CTAs. Mouse users see the motion. Keyboard: Tab / Enter works because it's inner link. BUT focus-ring visibility: since transform translate(x,y) is applied to parent wrapper div only, the focus outline gets translated outside the clickable rectangle in the viewport — visually confusing outline offset.",
+      "recommendedFix": "Apply :focus-visible { outline-offset style fix } or ensure focus outline is drawn on the child <a> via isolation: isolate; also pass tabIndex={-1} on wrapper and keep real focus semantics on children exclusively."
+    },
+    {
+      "id": "AX-005",
+      "category": "accessibility",
+      "severity": "medium",
+      "file": "src/pages/Home.tsx",
+      "line": 488,
+      "issue": "WorkflowDiagram SVG paths + animated SMIL circles aria-hidden but text-only alternatives missing",
+      "description": "WorkflowDiagram (lines 488-529) has aria-hidden svg + 4 divs with Headset, PhoneCall, CalendarCheck2, BellRing icons with no screen-reader equivalent labels for the connections 'Step 1 -> Step 2' visually shown by SVG paths. Four nodes are accessible but the semantic 'flow' is not.",
+      "recommendedFix": "Wrap entire diagram container in role=\"img\" aria-label=\"Workflow: Incoming Call/Chat -> RingRight agent -> Qualified lead synced to CRM OR Emergency support ticket escalated\". Keep inner SVG aria-hidden."
+    },
+    {
+      "id": "AX-006",
+      "category": "accessibility",
+      "severity": "medium",
+      "file": "src/pages/Contact.tsx",
+      "line": 175,
+      "issue": "Form inputs lack explicit aria-describedby / aria-invalid programmatic hooks for validation",
+      "description": "Form uses htmlFor/id pairs for label+input (good! present lines 177/181/185/189/194/206). But Contact form has no validation yet. When validation is added, screen readers must hear 'Invalid: email format' instead of just seeing red text via visual CSS. Current form has no aria-invalid, aria-required, nor aria-describedby connections to any error node.",
+      "recommendedFix": "Use existing installed packages react-hook-form + @hookform/resolvers/zod (both in package.json!) to generate accessible form that wires aria-invalid, aria-required, aria-describedby automatically per field via Controller."
+    },
+    {
+      "id": "AX-007",
+      "category": "accessibility",
+      "severity": "low",
+      "file": "src/components/site/Footer.tsx",
+      "line": 26,
+      "issue": "Footer headings (Company, Growth services, Integration ecosystem) are <h3> without page heading hierarchy context",
+      "description": "Footer <h3> tags (lines 26, 34, 42). Pages have semantic structure: PageHero h1 -> SectionIntro h2 -> section h3 -> footer h3. OK-ish but heading levels should reflect page outline. If there are ever h4 elements inside sections before footer, the h3 jump is fine. However, for assistive tech heading-outline view, footer 'Company' is weight-equivalent to card titles. Often footers are h2 visually styled down.",
+      "recommendedFix": "Change footer column headings to <h2> with className to keep styling, and hide with sr-only a 'Site footer' wrapper h2 for logical heading region, or accept current and document the decision — minor."
+    },
+    {
+      "id": "PF-001",
+      "category": "performance",
+      "severity": "critical",
+      "file": "package.json",
+      "line": 40,
+      "issue": "Unused heavyweight 3D dependencies installed: three, @react-three/fiber, @react-three/drei (~1.2MB+ gzipped)",
+      "description": "package.json dependencies include three, @react-three/fiber, @react-three/drei. Search of src/ shows zero imports of these packages anywhere. A marketing landing page does NOT need a WebGL renderer. These alone can add >1.5MB uncompressed to node_modules AND if any barrel import mistakenly includes them (side-effect tree-shaking misses) production bundle is bloated.",
+      "recommendedFix": "Uninstall immediately: npm uninstall three @react-three/fiber @react-three/drei. Verify no references in imports via grep after removal. Check build bundle size delta."
+    },
+    {
+      "id": "PF-002",
+      "category": "performance",
+      "severity": "high",
+      "file": "package.json",
+      "line": 13,
+      "issue": "Multiple installed but unused heavy packages: recharts, cmdk, date-fns, react-day-picker, input-otp, vaul, resizable-panels, next-themes",
+      "description": "Checked src for imports of: recharts (not found), cmdk (not found), date-fns (not found), react-day-picker (not found), input-otp (not found), vaul drawer (not found), react-resizable-panels (not found), next-themes (not found — site uses manual CSS). Unused packages bloat install, audit noise, and tree-shake risk.",
+      "recommendedFix": "Uninstall each package not referenced in src/: npm uninstall recharts cmdk date-fns react-day-picker input-otp vaul react-resizable-panels next-themes @hookform/resolvers react-hook-form zod unless react-hook-form is adopted for Contact form per AX-006 / LS-001 recommendation."
+    },
+    {
+      "id": "PF-003",
+      "category": "performance",
+      "severity": "high",
+      "file": "src/index.css",
+      "line": 1,
+      "issue": "Google Fonts loaded via CSS @import (render-blocking, no preconnect, no font-display)",
+      "description": "Line 1: @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800;900&display=swap'); — @import blocks rendering of the rest of the CSS file until download finishes. No preconnect hints to fonts.gstatic.com / fonts.googleapis.com.",
+      "recommendedFix": "Move to index.html: <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\"><link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin><link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/...&display=swap\">. Also add self-hosted fallback option via @fontsource packages."
+    },
+    {
+      "id": "PF-004",
+      "category": "performance",
+      "severity": "medium",
+      "file": "src/components/site/shared.tsx & Home.tsx & About.tsx & GrowthStrategy.tsx",
+      "line": 61,
+      "issue": "All marketing imagery uses plain JPG imported at original full resolution — no srcset, no sizes, no next-gen formats",
+      "description": "src/assets contain 15+ .jpg and .png files. Vite processes them via import but by default no responsive sizing. A mobile LCP viewer loads a ~2500px-wide hero image intended for desktop. Also no WebP/AVIF format variants: browsers get JPG (~3-5x larger than well-compressed AVIF). Largest contentful paint (LCP) is directly impacted.",
+      "recommendedFix": "Option A: Vite plugin: vite-plugin-image-optimizer + vite-plugin-sharp-loader to generate srcset on import. Option B: Generate manually and export Image component accepting src + widths array. Add width/height attributes to all <img> to prevent CLS (cumulative layout shift)."
+    },
+    {
+      "id": "PF-005",
+      "category": "performance",
+      "severity": "medium",
+      "file": "src/App.tsx",
+      "line": 78,
+      "issue": "No route-based code splitting / lazy loading — all 4 pages ship in initial chunk",
+      "description": "Routes (lines 79-82) use static imports. Home.tsx is a huge 680-line file with 10+ components. Initial JS chunk index-cs_OfCl0.js in dist/assets is the entirety of site code — no async chunks for non-home routes. Small site today but growth path is bad.",
+      "recommendedFix": "Replace each page import with: const Home = React.lazy(() => import('./pages/Home')); wrap Routes in <Suspense fallback={<PreloaderSkeleton/>}> or <Skeleton className=\"min-h-screen\" />. Keeps initial chunk lean."
+    },
+    {
+      "id": "PF-006",
+      "category": "performance",
+      "severity": "medium",
+      "file": "src/components/site/effects.tsx",
+      "line": 11,
+      "issue": "CursorGlow + ScrollProgress mount global animation for entire app lifetime even if hidden visually",
+      "description": "CursorGlow adds a window pointermove listener firing up to 120 times/sec for the entire user session. Mobile/touch users: pointermove still fires on touch scroll; and cursor-glow is invisible (no pointer) but still triggers React writes. ScrollProgress uses useScroll which tracks pageY even when element is 1px bar. Combined with 3 framer-motion useSprings each with their own RAF.",
+      "recommendedFix": "Feature-detect touch device / reduced motion and disable CursorGlow entirely. De-bounce pointermove via rAF: update x/y once per frame only. Optionally hide ScrollProgress on mobile viewports below 768px."
+    },
+    {
+      "id": "PF-007",
+      "category": "performance",
+      "severity": "low",
+      "file": "src/App.css",
+      "line": 1,
+      "issue": "App.css contains unused Vite boilerplate CSS (#root center, .logo-spin, .card, .read-the-docs)",
+      "description": "App.tsx imports App.css per line? Not present in current App.tsx read. Search confirms App.css file exists (served if imported somewhere). All styles are Vite starter boilerplate unused in this site. If imported it adds 42 dead bytes and extra CSS parse.",
+      "recommendedFix": "Delete src/App.css entirely. Verify no `import './App.css'` remains in any TSX file."
+    },
+    {
+      "id": "PF-008",
+      "category": "performance",
+      "severity": "low",
+      "file": "src/pages/Home.tsx",
+      "line": 66,
+      "issue": "Inline inline inline inline inline components cause unnecessary re-renders without React.memo",
+      "description": "Home.tsx defines 8 components inside one file. Each time Home re-renders (state change in HeroSection flowIndex, or lenis scroll effect causing parent to re-render) child components receive new function references for callbacks, prop drilling of primitives is fine but motion variants objects are re-created. For a site-level page with heavy animation this compounds GC work.",
+      "recommendedFix": "Extract components to separate files + wrap leaf/many-instance components (ServiceCard, IndustryCard) with React.memo. Also hoist large inline variants={stagger/fadeUp} to module-level const (they already are imported from presets.ts so this is mostly okay)."
+    },
+    {
+      "id": "BC-001",
+      "category": "browserCompatibility",
+      "severity": "medium",
+      "file": "tsconfig.app.json",
+      "line": 4,
+      "issue": "Target ES2022 excludes Safari < 15.4, Firefox < 100, Chrome < 97 — no transpilation for older supported browsers",
+      "description": "tsconfig target: 'ES2022' uses class-fields, top-level await, optional-chaining-assign natively. Plus @vitejs/plugin-react does not polyfill. If analytics show users on older iOS Safari (common in corporate/iPad fleets), class fields in class components + Object.hasOwn() would throw SyntaxError. Also missing explicit browserslist config means autoprefixer applies minimal prefixing.",
+      "recommendedFix": "Add explicit browserslist to package.json e.g. \">0.5%, last 2 versions, not dead, iOS >= 14, Safari >= 14\". Consider lowering target to ES2020 if older browser share exists. Verify feature support via caniuse.com for backdrop-filter, container queries used in Tailwind @container."
+    },
+    {
+      "id": "BC-002",
+      "category": "browserCompatibility",
+      "severity": "medium",
+      "file": "tailwind.config.js & src/components/ui/*",
+      "line": 1,
+      "issue": "Modern CSS features without fallback: backdrop-blur (backdrop-filter), @container queries, CSS custom props in HSL",
+      "description": "Heavy use of: backdrop-blur-2xl (requires backdrop-filter support — Edge 18, iOS Safari 9 with -webkit-, Safari 9+, Chrome 76+); container queries @container/card-header (Chrome 105+, Safari 16+, Firefox 110+); and :where/:is selectors from Tailwind 3. Users on enterprise Chromium ESR < 110 or older iPads get broken sticky header blur and collapsed card layouts.",
+      "recommendedFix": "Document supported browser matrix explicitly. Add `supports-not-backdrop-filter` fallback class: e.g. header with solid bg when backdrop-filter unavailable (CSS @supports not (backdrop-filter: blur) { .header { background-color: rgba(255,255,255,0.97) !important; } }). Container query fallbacks for fields/cards if targeting pre-2023 browsers."
+    }
+  ]
+}

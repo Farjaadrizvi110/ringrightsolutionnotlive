@@ -1,0 +1,40 @@
+# Vercel deploy ignore patterns (same intent as .gitignore + Vercel-specific extras)
+# Docs: https://vercel.com/guides/prevent-uploading-paths-with-vercelignore
+
+node_modules
+dist
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Certs
+*.pem
+*.key
+*.crt
+
+# Editor / IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+
+# Vercel temp
+.vercel
+
+# Previous build artifacts
+.cache
+.parcel-cache
+.turbo
+coverage

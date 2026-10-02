@@ -1,14 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { animate, motion } from 'framer-motion'
-import logo from '../../assets/ringright-mark.png'
+import logoImport from '../../assets/ringright-mark.png'
 
 const ease = [0.16, 1, 0.32, 1] as const
 const word = 'RINGRIGHT'
 const PANELS = 5
 
+const logo = (logoImport ?? '/favicon.png') as string
+
+function useEffectRef<T>(value: T): { readonly current: T } {
+  const ref = useRef(value)
+  ref.current = value
+  return ref
+}
+
 export default function Preloader({ onComplete }: { onComplete: () => void }) {
   const [progress, setProgress] = useState(0)
   const [exiting, setExiting] = useState(false)
+  const onCompleteRef = useEffectRef(onComplete)
+  const firedRef = useRef(false)
 
   useEffect(() => {
     const controls = animate(0, 100, {
@@ -16,12 +26,14 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
       ease: [0.32, 0.72, 0.24, 1],
       onUpdate: (value) => setProgress(Math.round(value)),
       onComplete: () => {
+        if (firedRef.current) return
+        firedRef.current = true
         setExiting(true)
-        window.setTimeout(onComplete, 1120)
+        window.setTimeout(() => onCompleteRef.current(), 1120)
       },
     })
     return () => controls.stop()
-  }, [onComplete])
+  }, [onCompleteRef])
 
   return (
     <div className="preloader" role="status" aria-label="Loading RingRight Solution">

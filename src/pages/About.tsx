@@ -6,8 +6,11 @@ import Header from '../components/site/Header'
 import Footer from '../components/site/Footer'
 import { FinalCta, PageHero, SectionIntro } from '../components/site/shared'
 import { fadeUp, stagger } from '../components/site/presets'
-import aboutImage from '../assets/about-team.jpg'
-import answeringImage from '../assets/answering-team.jpg'
+import aboutImageImport from '../assets/about-team.jpg'
+import answeringImageImport from '../assets/answering-team.jpg'
+const fallbackImg = '/favicon.png'
+const aboutImage = (aboutImageImport ?? fallbackImg) as string
+const answeringImage = (answeringImageImport ?? fallbackImg) as string
 
 const values = [
   {

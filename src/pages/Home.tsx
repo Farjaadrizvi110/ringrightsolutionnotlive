@@ -22,9 +22,13 @@ import { Magnetic } from '../components/site/effects'
 import { ease, fadeUp, stagger } from '../components/site/presets'
 import { industries, integrations, services } from '../data/site'
 import type { Service } from '../data/site'
-import heroImage from '../assets/hero-call-answering.jpg'
-import answeringTeam from '../assets/answering-team.jpg'
-import growthAnalytics from '../assets/growth-analytics.jpg'
+import heroImageImport from '../assets/hero-call-answering.jpg'
+import answeringTeamImport from '../assets/answering-team.jpg'
+import growthAnalyticsImport from '../assets/growth-analytics.jpg'
+const fallbackImg = '/favicon.png'
+const heroImage = (heroImageImport ?? fallbackImg) as string
+const answeringTeam = (answeringTeamImport ?? fallbackImg) as string
+const growthAnalytics = (growthAnalyticsImport ?? fallbackImg) as string
 
 type SchemaGraphNode = {
   '@type': string

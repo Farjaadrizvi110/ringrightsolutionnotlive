@@ -7,8 +7,11 @@ import Footer from '../components/site/Footer'
 import { FinalCta, PageHero, SectionIntro } from '../components/site/shared'
 import { ease, fadeUp, stagger } from '../components/site/presets'
 import { growthStages, services } from '../data/site'
-import growthImage from '../assets/growth-analytics.jpg'
-import strategyImage from '../assets/strategy-team.jpg'
+import growthImageImport from '../assets/growth-analytics.jpg'
+import strategyImageImport from '../assets/strategy-team.jpg'
+const fallbackImg = '/favicon.png'
+const growthImage = (growthImageImport ?? fallbackImg) as string
+const strategyImage = (strategyImageImport ?? fallbackImg) as string
 
 const principles = [
   {

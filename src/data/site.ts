@@ -34,17 +34,29 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-import emailImage from '../assets/services/email.jpg'
-import socialImage from '../assets/services/social.jpg'
-import softwareImage from '../assets/services/software.jpg'
-import printImage from '../assets/services/print.jpg'
-import brandingImage from '../assets/services/branding.jpg'
-import emailDetail from '../assets/email-detail.jpg'
-import socialDetail from '../assets/social-detail.jpg'
-import softwareDetail from '../assets/software-detail.jpg'
-import printDetail from '../assets/print-detail.jpg'
-import brandDetail from '../assets/brand-detail.jpg'
-import answeringTeam from '../assets/answering-team.jpg'
+import emailImageImport from '../assets/services/email.jpg'
+import socialImageImport from '../assets/services/social.jpg'
+import softwareImageImport from '../assets/services/software.jpg'
+import printImageImport from '../assets/services/print.jpg'
+import brandingImageImport from '../assets/services/branding.jpg'
+import emailDetailImport from '../assets/email-detail.jpg'
+import socialDetailImport from '../assets/social-detail.jpg'
+import softwareDetailImport from '../assets/software-detail.jpg'
+import printDetailImport from '../assets/print-detail.jpg'
+import brandDetailImport from '../assets/brand-detail.jpg'
+import answeringTeamImport from '../assets/answering-team.jpg'
+const fallbackImg = '/favicon.png'
+const emailImage = (emailImageImport ?? fallbackImg) as string
+const socialImage = (socialImageImport ?? fallbackImg) as string
+const softwareImage = (softwareImageImport ?? fallbackImg) as string
+const printImage = (printImageImport ?? fallbackImg) as string
+const brandingImage = (brandingImageImport ?? fallbackImg) as string
+const emailDetail = (emailDetailImport ?? fallbackImg) as string
+const socialDetail = (socialDetailImport ?? fallbackImg) as string
+const softwareDetail = (softwareDetailImport ?? fallbackImg) as string
+const printDetail = (printDetailImport ?? fallbackImg) as string
+const brandDetail = (brandDetailImport ?? fallbackImg) as string
+const answeringTeam = (answeringTeamImport ?? fallbackImg) as string
 
 export type ServicePillar = {
   title: string
